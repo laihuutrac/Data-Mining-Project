@@ -1,0 +1,311 @@
+---
+title: "DoAnDMining"
+author: "Nhóm 8"
+date: "4/17/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Proposal:  Water Quality
+
+
+## Thành Viên:
+ + Nguyễn Anh Đắc		    19133020
+ + Nguyễn Thanh Tân Kỷ	19133031
+ + Lại Hữu Trác			    19133059
+ + Đào Thị Cẩm Tiên		  19133055
+
+## Giới Thiệu
+- Tiếp cận nước uống an toàn là điều cần thiết đối với sức khỏe, một quyền cơ bản của con người và là một thành phần của chính sách hiệu quả để bảo vệ sức khỏe. 
+- Đây là vấn đề quan trọng như một vấn đề sức khỏe và phát triển ở cấp quốc gia, khu vực và địa phương. 
+Ở một số vùng, người ta đã chỉ ra rằng các khoản đầu tư vào cấp nước và vệ sinh có thể mang lại lợi ích kinh tế ròng, vì việc giảm các tác động xấu đến sức khỏe và chi phí chăm sóc sức khoẻ lớn hơn chi phí thực hiện các can thiệp.
+
+## Data
+- Dữ liệu chứa các chỉ số chất lượng nước, gồm 10 cột và 3276 dòng
+- Các cột trong tập dữ liệu:
+  + pH value: Độ pH của nước. WHO đã khuyến cáo giới hạn pH tối đa cho phép từ 6,5 đến 8,5
+  + Hardness(mg/l): Độ cứng của nước. Độ cứng của nước được định nghĩa đơn giản nhất là loại nước có tổng lượng muối Ca và Mg được hòa tan trong nước vượt qua mức cho phép
+  + Solids (Total dissolved solids - TDS): Tổng chất rắn hoà tan trong nước. giới hạn mong muốn cho TDS là 500 mg / l và giới hạn tối đa là 1000 mg / l được quy định cho mục đích uống	
+  + Chloramines: Mức clo lên đến 4 miligam mỗi lít (mg / L hoặc 4 phần triệu (ppm)) được coi là an toàn trong nước uống
+  + Sulfate: lượng sulfate trong nước
+  + Conductivity: tính dẫn điện. 
+  + Organic_carbon: lượng cacbon hữu cơ trong nước
+  + Trihalomethanes: lượng THM trong nước. Đây là sản phẩm phụ của quá trình khử trùng nước bằng Chlorine.
+  + Turbidity: Độ đục của nước
+  + Potability: Cho biết liệu nước có an toàn cho con người hay không, trong đó 1 nghĩa là Uống được và 0 nghĩa là Không uống được
+  
+  
+  
+## Kế Hoạch Phân Tích
+
+- Nhóm đặt ra câu hỏi nghiên cứu chung là tìm ra các yếu tố ảnh hưởng tới chất lượng nước. 
++ Độ pH ảnh hưởng như thế nào đến chất lượng của nguồn nước?
++ Độ pH ảnh hưởng như thế nào đến chất lượng của nguồn nước?
++ Độ cứng Hardness có ảnh hưởng đến chất lượng nguồn nước không?
+
+
+- Dự đoán:
+  + Input: pH, Hardness, Solids, Chloramines, Sulfate, Conductivity, Organic_carbon, Trihalomethanes, Turbidity.
+  + Output: Potability.
+
+- Chia tập train, tập test
+- Trên tập train sẽ thử các thuật toán:
+  + Decision Tree
+  + Knn
+  + Random Forest
+  + Logistic Regression
+- Đánh giá mô hình trên tập test.
+
+
+
+```{r pressure, echo=FALSE}
+library(ggplot2)
+library(dplyr)
+library(corrplot)
+
+```
+
+
+
+```{r pressure, echo=FALSE}
+
+df<- read.csv("water_potability.csv")
+
+```
+- 5 dòng đầu
+```{r}
+head(df)
+
+```
+
+- 5 dòng cuối
+```{r}
+tail(df)
+
+```
+
+
+```{r}
+#So Dong & Cot
+dim(df)
+```
+
+```{r}
+str(df)
+```
+```{r}
+summary(df)
+```
+
+```{r}
+#xử lý giá trị NA bằng cách thay bằng giá trị median
+df <- df %>%  
+  group_by(Potability) %>%
+  mutate_at(vars(-c("Potability")),~ifelse(is.na(.), mean(., na.rm = TRUE), .))
+#library(tidyr)
+#df<-df %>% drop_na()
+summary(df)
+```
+```{r}
+
+
+```
+
+```{r}
+corrplot(cor(df), method = 'color', order = 'alphabet')
+```
+
+
+```{r}
+
+#df %>%
+ # group_by(Potability) %>%
+#  count() %>%
+#  ggplot(aes(Potability,n,fill=Potability))+geom_col()+theme_minimal()
+
+```
+## Predict_Quality_Water
+
+
+```{r}
+library(reshape2)
+melt(df) %>% ggplot(aes(variable,value)) + 
+  geom_boxplot(alpha = .5, fill = "red") + 
+  facet_wrap( ~ variable, scales="free")
+```
+
+## Predict_Quality_Water
+```{r}
+df$Potability <- factor(df$Potability)
+library(randomForest)
+```
+
+
+
+```{r}
+library(caret)
+
+set.seed(222) 
+
+#trn_index <- createDataPartition(y = df$Potability, p = 0.75, list = FALSE)
+
+#train_water <- df[trn_index, ]
+#test_water <- df[-trn_index, ]
+
+#set.seed(333)
+
+index <- createDataPartition(y = df$Potability, p = 0.75, list = FALSE)
+training <- df[index, ]
+testing <- df[-index, ]
+
+
+```
+
+
+
+#Random Forest
+```{r}
+set.seed(122)
+trControl <- trainControl(method = "repeatedcv", number = 5, repeats =  3 )
+tunegrid = expand.grid(mtry = c(2:4))
+potability_rf <- train(Potability ~., data = training, method = 'rf', tuneGrid = tunegrid,ntree=500, trControl = trControl)
+varImp(potability_rf)
+potability_rf
+
+```
+
+```{r}
+#t <- tuneRF(training[,-10], training$Potability, stepFactor = 2, plot = TRUE)
+#potability_rf
+```
+
+
+```{r}
+potability_rf
+```
+
+
+```{r}
+datatrain_knn<-training
+#Xử lý outlier
+Q1 <- quantile(datatrain_knn$ph, .25)
+Q3 <- quantile(datatrain_knn$ph, .75)
+IQR <- IQR(datatrain_knn$ph)
+no_outliers1 <- subset(datatrain_knn, datatrain_knn$ph> (Q1 - 1.5*IQR) & datatrain_knn$ph< (Q3 + 1.5*IQR))
+#Hardness
+Q1 <- quantile(datatrain_knn$Hardness, .25)
+Q3 <- quantile(datatrain_knn$Hardness, .75)
+IQR <- IQR(datatrain_knn$Hardness)
+no_outliers2 <- subset(no_outliers1, no_outliers1$Hardness> (Q1 - 1.5*IQR) & no_outliers1$Hardness< (Q3 + 1.5*IQR))
+#Solids
+Q1 <- quantile(datatrain_knn$Solids, .25)
+Q3 <- quantile(datatrain_knn$Solids, .75)
+IQR <- IQR(datatrain_knn$Solids)
+no_outliers3 <- subset(no_outliers2, no_outliers2$Solids> (Q1 - 1.5*IQR) & no_outliers2$Solids< (Q3 + 1.5*IQR))
+#Chloramines
+Q1 <- quantile(datatrain_knn$Chloramines, .25)
+Q3 <- quantile(datatrain_knn$Chloramines, .75)
+IQR <- IQR(datatrain_knn$Chloramines)
+no_outliers4 <- subset(no_outliers3, no_outliers3$Chloramines> (Q1 - 1.5*IQR) & no_outliers3$Chloramines< (Q3 + 1.5*IQR))
+#Sulfate
+Q1 <- quantile(datatrain_knn$Sulfate, .25)
+Q3 <- quantile(datatrain_knn$Sulfate, .75)
+IQR <- IQR(datatrain_knn$Sulfate)
+no_outliers5 <- subset(no_outliers4, no_outliers4$Sulfate> (Q1 - 1.5*IQR) & no_outliers4$Sulfate< (Q3 + 1.5*IQR))
+#Conductivity
+Q1 <- quantile(datatrain_knn$Conductivity, .25)
+Q3 <- quantile(datatrain_knn$Conductivity, .75)
+IQR <- IQR(datatrain_knn$Conductivity)
+no_outliers6 <- subset(no_outliers5, no_outliers5$Conductivity> (Q1 - 1.5*IQR) & no_outliers5$Conductivity< (Q3 + 1.5*IQR))
+#Organic_carbon
+Q1 <- quantile(datatrain_knn$Organic_carbon, .25)
+Q3 <- quantile(datatrain_knn$Organic_carbon, .75)
+IQR <- IQR(datatrain_knn$Organic_carbon)
+no_outliers7 <- subset(no_outliers6, no_outliers6$Organic_carbon> (Q1 - 1.5*IQR) & no_outliers6$Organic_carbon< (Q3 + 1.5*IQR))
+#Trihalomethanes
+Q1 <- quantile(datatrain_knn$Trihalomethanes, .25)
+Q3 <- quantile(datatrain_knn$Trihalomethanes, .75)
+IQR <- IQR(datatrain_knn$Trihalomethanes)
+no_outliers8 <- subset(no_outliers7, no_outliers7$Trihalomethanes> (Q1 - 1.5*IQR) & no_outliers7$Trihalomethanes< (Q3 + 1.5*IQR))
+#Turbidity
+Q1 <- quantile(datatrain_knn$Turbidity, .25)
+Q3 <- quantile(datatrain_knn$Turbidity, .75)
+IQR <- IQR(datatrain_knn$Turbidity)
+no_outliers9 <- subset(no_outliers8, no_outliers8$Turbidity> (Q1 - 1.5*IQR) & no_outliers8$Turbidity< (Q3 + 1.5*IQR))
+datatrain_knn <- no_outliers9
+
+
+
+```
+#k-fold cross validate
+
+#Knn
+
+
+```{r}
+tuneGrid <- expand.grid(k = seq(51,151, by = 2))
+
+#Mô hình knn
+knn <- train(Potability ~., data = datatrain_knn, method = 'knn', tuneGrid = tuneGrid, trControl = trControl)
+
+```
+
+
+
+```{r}
+knn
+```
+
+
+```{r}
+knn
+```
+
+
+
+#Logistic Regression 
+
+```{r}
+# Logistic regression
+set.seed(1)
+potability_lr <- train(Potability ~ ph+ Hardness+ Chloramines+ Sulfate+ Turbidity, method = "glm", data = datatrain_knn, 
+                      family = binomial(link = "logit"),
+                      trControl = trainControl(method = 'repeatedcv', number = 5, repeats = 3))
+potability_lr
+
+```
+
+```{r}
+
+```
+
+
+
+# Ta thấy với mô hình random forest cho chúng ta kết quả tốt nhất 
+# Thực hiện kiểm tra trên tâp test
+
+```{r}
+# Prediction on test-dataset
+predicted_outcomes_rf <- predict(potability_rf, testing)
+
+
+# Create Confusion Matrices
+rf_confm <- confusionMatrix(predicted_outcomes_rf, testing$Potability)
+
+rf_confm
+
+
+```
+
+
+
+
+
+
+
+
+
+
